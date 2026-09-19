@@ -1,166 +1,167 @@
-import { useRef } from 'react'
-import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowUpRight, X, Sparkles, CheckCircle2 } from 'lucide-react'
 
-interface PropertyCard {
-  id: string
-  title: string
-  location: string
-  price: string
-  image: string
-  tag: string
+interface HeroProps {
+  onContactClick?: () => void
 }
 
-export function Hero() {
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+export function Hero({ onContactClick }: HeroProps) {
+  const [modalOpen, setModalOpen] = useState(false)
+  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' })
 
-  const properties: PropertyCard[] = [
-    {
-      id: 'villa-1',
-      title: 'Villa Lumina',
-      location: 'Malibu Coast, CA',
-      price: '$6,850,000',
-      image: '/images/luxury_villa_1.jpg',
-      tag: 'Architectural Masterpiece',
-    },
-    {
-      id: 'villa-2',
-      title: 'Aura Infinity Estate',
-      location: 'Aspen Ridge, CO',
-      price: '$12,400,000',
-      image: '/images/luxury_villa_2.jpg',
-      tag: 'Panoramic Sunset View',
-    },
-    {
-      id: 'villa-3',
-      title: 'The Glass Pavilion',
-      location: 'Scottsdale, AZ',
-      price: '$5,900,000',
-      image: '/images/luxury_villa_3.jpg',
-      tag: 'Minimalist Sanctuary',
-    },
-    {
-      id: 'villa-4',
-      title: 'Solstice Villa',
-      location: 'Bel Air, CA',
-      price: '$8,250,000',
-      image: '/images/luxury_villa_1.jpg',
-      tag: 'Exclusive Modern Living',
-    },
-  ]
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 320
-      scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      })
+  const handleContact = () => {
+    if (onContactClick) {
+      onContactClick()
+    } else {
+      setModalOpen(true)
     }
   }
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormSubmitted(true)
+    setTimeout(() => {
+      setModalOpen(false)
+      setFormSubmitted(false)
+      setFormData({ name: '', email: '', message: '' })
+    }, 2200)
+  }
+
   return (
-    <section className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden bg-[#121214] text-white pt-32 sm:pt-36 pb-12 sm:pb-16 select-none">
-      {/* Background Dusk Skyline */}
+    <section className="relative w-full h-screen min-h-[640px] max-h-[1080px] flex flex-col justify-between overflow-hidden bg-[#0a0c0f] text-white select-none">
+      {/* 1. Cinematic Background Layer with Villa & Typography */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/images/skyline_dusk.jpg"
-          alt="Twilight city skyline with illuminated skyscraper"
-          className="w-full h-full object-cover object-center scale-105 transition-transform duration-1000 ease-out"
+          src="/images/livinor_hero_bg.jpg"
+          alt="LIVINOR Modern Luxury Architecture Villa"
+          className="w-full h-full object-cover object-[center_30%] sm:object-[center_35%] lg:object-center transition-transform duration-1000 ease-out scale-[1.01]"
         />
-        
-        {/* Cinematic Vignette and Dark Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/90 pointer-events-none" />
-        <div className="absolute inset-0 bg-radial-[circle_at_center,_transparent_40%,_rgba(0,0,0,0.6)_100%] pointer-events-none" />
-        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#121214] via-[#121214]/80 to-transparent pointer-events-none" />
+
+        {/* Top Dusk Sky Subtle Darkening for Nav Legibility */}
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-black/45 via-black/15 to-transparent pointer-events-none" />
+
+        {/* Bottom Ground Dark Vignette matching reference */}
+        <div className="absolute bottom-0 inset-x-0 h-72 sm:h-84 lg:h-96 bg-gradient-to-t from-[#090b0e] via-[#090b0e]/75 to-transparent pointer-events-none" />
       </div>
 
-      {/* Typographic Backdrop: HORIZON */}
-      <div className="relative z-10 w-full flex items-center justify-center pointer-events-none my-auto px-4 py-6 sm:py-10">
-        <h1
-          className="text-[10vw] md:text-[8.5vw] lg:text-[8vw] font-bold uppercase tracking-[0.16em] sm:tracking-[0.22em] leading-none text-[#d6c2b1]/80 drop-shadow-[0_8px_24px_rgba(0,0,0,0.7)] transition-all duration-300 select-none text-center max-w-6xl mx-auto"
-        >
-          HORIZON
-        </h1>
-      </div>
+      {/* 2. Top spacing buffer for the fixed header */}
+      <div className="relative z-10 w-full pt-28 sm:pt-36 pointer-events-none" />
 
-      {/* Bottom Content Area */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 mt-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end">
+      {/* 3. Bottom Hero Content Area */}
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 pb-10 sm:pb-14 lg:pb-16 mt-auto">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 lg:gap-12">
           
-          {/* Left Column: Heading & Subtitle */}
-          <div className="lg:col-span-5 flex flex-col justify-end">
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight text-white leading-[1.1] drop-shadow-md">
-              The World
-              <br />
-              <span className="font-semibold text-white">Of Luxury</span>
-            </h2>
-            <p className="mt-4 text-sm sm:text-base text-white/80 max-w-sm leading-relaxed font-light drop-shadow">
-              Unlock the perfect living experience by exploring a diverse selection of homes.
-            </p>
+          {/* Left Column: Heading + Description inline on desktop */}
+          <div className="flex flex-col xl:flex-row xl:items-end gap-5 sm:gap-7 xl:gap-8 max-w-4xl">
+            {/* Main Punchy 3-line Headline */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-semibold text-white tracking-tight leading-[1.14] drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+              Experience innovative<br />
+              architecture that transforms<br />
+              your vision
+            </h1>
 
-            {/* Slider Navigation Chevrons */}
-            <div className="mt-6 hidden sm:flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => scroll('left')}
-                className="w-10 h-10 rounded-full border border-white/20 bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 hover:border-white/40 transition-all cursor-pointer"
-                aria-label="Scroll left"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <button
-                type="button"
-                onClick={() => scroll('right')}
-                className="w-10 h-10 rounded-full border border-white/20 bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 hover:border-white/40 transition-all cursor-pointer"
-                aria-label="Scroll right"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
+            {/* Subtitle description beside/below heading */}
+            <p className="text-white/75 text-xs sm:text-sm md:text-[13px] font-normal leading-relaxed max-w-xs sm:max-w-sm drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] xl:pb-1">
+              We craft inspiring spaces that blend cutting-edge design with enduringFunctionality, turning your vision into reality.
+            </p>
           </div>
 
-          {/* Right Column: Horizontal Cards Strip */}
-          <div className="lg:col-span-7 overflow-hidden">
-            <div
-              ref={scrollContainerRef}
-              className="flex items-center gap-4 sm:gap-5 overflow-x-auto no-scrollbar scroll-smooth pb-4 pt-2 -mx-2 px-2"
+          {/* Right Column: High-Impact Neon Lime Contact Us Pill */}
+          <div className="shrink-0 flex items-center">
+            <button
+              type="button"
+              onClick={handleContact}
+              className="group inline-flex items-center gap-3.5 bg-[#74dc14] hover:bg-[#68cb10] active:scale-95 text-neutral-950 font-semibold text-sm sm:text-base pl-6 sm:pl-7 pr-2.5 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_24px_rgba(116,220,20,0.35)] hover:shadow-[0_6px_32px_rgba(116,220,20,0.55)] cursor-pointer"
             >
-              {properties.map((item) => (
-                <div
-                  key={item.id}
-                  className="group relative flex-shrink-0 w-[240px] sm:w-[280px] md:w-[300px] aspect-[4/3] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/25 shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-[1.03] hover:border-white/60 hover:shadow-black/60 cursor-pointer"
-                >
-                  {/* Property Image */}
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
-                  />
-
-                  {/* Dark gradient overlay on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-[#d6c2b1]">
-                      {item.tag}
-                    </span>
-                    <div className="flex items-center justify-between mt-1">
-                      <h3 className="text-sm font-semibold text-white">
-                        {item.title}
-                      </h3>
-                      <span className="p-1 rounded-full bg-white/20 backdrop-blur text-white">
-                        <ArrowUpRight size={14} />
-                      </span>
-                    </div>
-                    <p className="text-xs font-medium text-white/80 mt-0.5">
-                      {item.price} • {item.location}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+              <span className="tracking-tight text-neutral-950 font-semibold">
+                Contact Us
+              </span>
+              <span className="w-8 h-8 rounded-full bg-neutral-950 text-[#74dc14] flex items-center justify-center transition-all duration-300 group-hover:rotate-45 group-hover:bg-black shadow-sm">
+                <ArrowUpRight size={17} strokeWidth={2.4} />
+              </span>
+            </button>
           </div>
 
         </div>
       </div>
+
+      {/* Interactive Contact Drawer / Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#12151b] border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="absolute top-5 right-5 text-white/60 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            {formSubmitted ? (
+              <div className="py-8 text-center flex flex-col items-center">
+                <div className="w-14 h-14 rounded-full bg-[#74dc14]/20 border border-[#74dc14]/40 flex items-center justify-center text-[#74dc14] mb-4">
+                  <CheckCircle2 size={32} />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Message Received</h3>
+                <p className="text-sm text-white/70 max-w-xs">
+                  A LIVINOR architectural director will connect with you within 24 hours.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 text-[#74dc14]">
+                  <Sparkles size={18} />
+                  <span className="text-xs uppercase tracking-widest font-semibold">
+                    LIVINOR Architecture
+                  </span>
+                </div>
+
+                <h3 className="text-2xl font-semibold text-white tracking-tight">
+                  Consult With Our Architects
+                </h3>
+                <p className="text-xs sm:text-sm text-white/65 -mt-1 leading-relaxed">
+                  Tell us about your residential or commercial vision.
+                </p>
+
+                <div className="space-y-3 mt-2">
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Your Name"
+                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#74dc14]"
+                  />
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Email Address"
+                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#74dc14]"
+                  />
+                  <textarea
+                    rows={3}
+                    required
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    placeholder="Project vision, location, or desired scope..."
+                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#74dc14] resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="mt-2 w-full bg-[#74dc14] hover:bg-[#68cb10] active:scale-95 text-neutral-950 font-semibold py-3 rounded-full text-sm transition-all shadow-[0_2px_12px_rgba(116,220,20,0.3)] cursor-pointer"
+                >
+                  Send Consultation Request
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

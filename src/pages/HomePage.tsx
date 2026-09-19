@@ -8,45 +8,45 @@ interface HomePageProps {
 export function HomePage({ onNavigate }: HomePageProps) {
   const highlights = [
     {
-      icon: <Compass className="w-6 h-6 text-[#d6c2b1]" />,
-      title: 'Curated Portfolios',
-      description: 'Hand-vetted luxury villas and penthouses across prime architectural locations worldwide.',
+      icon: <Compass className="w-6 h-6 text-[#74dc14]" />,
+      title: 'Architectural Vision',
+      description: 'Sculpting iconic residential monuments that harmoniously unite daring structural engineering with serene living.',
     },
     {
-      icon: <Shield className="w-6 h-6 text-[#d6c2b1]" />,
-      title: 'Private Acquisitions',
-      description: 'Discreet off-market transactions managed by premier international private client advisors.',
+      icon: <Shield className="w-6 h-6 text-[#74dc14]" />,
+      title: 'Enduring Engineering',
+      description: 'Precision-engineered cantilevered foundations, thermal barrier glazing, and resilient sustainable materials.',
     },
     {
-      icon: <Sparkles className="w-6 h-6 text-[#d6c2b1]" />,
-      title: 'Bespoke Concierge',
-      description: 'Tailored private viewings, chartered aviation transfers, and comprehensive legal escrow.',
+      icon: <Sparkles className="w-6 h-6 text-[#74dc14]" />,
+      title: 'Bespoke Modernism',
+      description: 'Custom acoustic timber soffits, integrated ambient lighting schemes, and seamless indoor-outdoor transitions.',
     },
     {
-      icon: <Key className="w-6 h-6 text-[#d6c2b1]" />,
-      title: 'Turnkey Handover',
-      description: 'Seamless title transition with white-glove interior staging and management ready upon closing.',
+      icon: <Key className="w-6 h-6 text-[#74dc14]" />,
+      title: 'Turnkey Delivery',
+      description: 'Holistic project delivery from conceptual zoning and 3D architectural rendering to final structural commissioning.',
     },
   ]
 
   return (
-    <div className="w-full bg-[#121214] text-white">
-      {/* 1. Main Reference Hero Section */}
-      <Hero />
+    <div className="w-full bg-[#0a0c0f] text-white">
+      {/* 1. Main LIVINOR Hero Section */}
+      <Hero onContactClick={() => onNavigate?.('contact')} />
 
-      {/* 2. Architectural Highlights & Value Proposition */}
+      {/* 2. Architectural Pillars Section */}
       <section className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 py-24 border-t border-white/10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div>
-            <span className="text-xs uppercase tracking-[0.2em] text-[#d6c2b1] font-semibold">
-              The Homewide Standard
+            <span className="text-xs uppercase tracking-[0.2em] text-[#74dc14] font-semibold">
+              The LIVINOR Philosophy
             </span>
             <h2 className="text-3xl sm:text-4xl font-light text-white mt-2">
-              Unrivaled Luxury Living
+              Transforming Horizons Into Reality
             </h2>
           </div>
           <p className="text-white/60 text-sm sm:text-base max-w-md font-light leading-relaxed">
-            Every estate in the Horizon collection is evaluated against rigorous architectural standards, rare geographic desirability, and bespoke build quality.
+            Every architectural sanctuary designed by LIVINOR represents a masterclass in geometry, natural light, and structural elegance.
           </p>
         </div>
 
@@ -54,7 +54,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
           {highlights.map((item, idx) => (
             <div
               key={idx}
-              className="p-8 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#d6c2b1]/40 transition-all duration-300 hover:bg-white/[0.06] group"
+              className="p-8 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#74dc14]/40 transition-all duration-300 hover:bg-white/[0.06] group"
             >
               <div className="p-3 w-fit rounded-xl bg-white/[0.07] mb-6 group-hover:scale-110 transition-transform">
                 {item.icon}
@@ -66,53 +66,53 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      {/* 3. Upcoming Pages Section / Call to Action */}
-      <section className="relative w-full py-24 bg-gradient-to-b from-[#121214] via-[#1a1a1e] to-[#121214] border-t border-white/10">
+      {/* 3. Call to Action */}
+      <section className="relative w-full py-24 bg-gradient-to-b from-[#0a0c0f] via-[#12151b] to-[#0a0c0f] border-t border-white/10">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <span className="text-xs uppercase tracking-[0.25em] text-[#d6c2b1] font-semibold">
-            Private Consultation
+          <span className="text-xs uppercase tracking-[0.25em] text-[#74dc14] font-semibold">
+            Architectural Inquiries
           </span>
           <h2 className="text-4xl sm:text-5xl font-light text-white mt-3 mb-6 tracking-tight">
-            Discover Your Next Horizon
+            Ready to Build Your Architectural Vision?
           </h2>
           <p className="text-white/70 max-w-xl mx-auto text-sm sm:text-base mb-10 font-light leading-relaxed">
-            Connect with our global private advisors to access off-market architectural residences and exclusive estates before public listing.
+            Collaborate with our senior architectural partners to design and commission an extraordinary bespoke residential masterpiece.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <button
               type="button"
               onClick={() => onNavigate?.('contact')}
-              className="inline-flex items-center gap-3 bg-white text-neutral-950 font-medium px-8 py-3.5 rounded-xl hover:bg-neutral-100 transition-all shadow-lg hover:shadow-white/10 active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-3 bg-[#74dc14] text-neutral-950 font-semibold px-8 py-3.5 rounded-full hover:bg-[#68cb10] transition-all shadow-[0_4px_20px_rgba(116,220,20,0.35)] active:scale-95 cursor-pointer"
             >
-              <span>Schedule a Private Showing</span>
+              <span>Schedule Initial Consultation</span>
               <ArrowRight size={16} />
             </button>
             <button
               type="button"
-              onClick={() => onNavigate?.('works')}
-              className="inline-flex items-center gap-2 border border-white/20 bg-white/5 backdrop-blur-sm text-white px-7 py-3.5 rounded-xl hover:bg-white/10 hover:border-white/40 transition-all cursor-pointer"
+              onClick={() => onNavigate?.('services')}
+              className="inline-flex items-center gap-2 border border-white/20 bg-white/5 backdrop-blur-sm text-white px-7 py-3.5 rounded-full hover:bg-white/10 hover:border-white/40 transition-all cursor-pointer"
             >
-              <span>Explore ccWorks</span>
+              <span>View Architectural Services</span>
             </button>
           </div>
         </div>
       </section>
 
-      {/* 4. Elegant Minimal Footer */}
+      {/* 4. Footer */}
       <footer className="w-full border-t border-white/10 py-12 px-6 sm:px-12 text-xs text-white/50 flex flex-col sm:flex-row items-center justify-between gap-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-2 text-white/80 font-medium">
-          <span>Homewide Luxury Real Estate</span>
+          <span className="text-[#74dc14] font-bold">LIVINOR</span>
           <span className="text-white/30">•</span>
-          <span className="text-white/40">Horizon Collection</span>
+          <span>Innovative Architecture & Design</span>
         </div>
         <div className="flex items-center gap-6">
-          <button type="button" onClick={() => onNavigate?.('about')} className="hover:text-white transition-colors">About</button>
-          <button type="button" onClick={() => onNavigate?.('works')} className="hover:text-white transition-colors">ccWorks</button>
-          <button type="button" onClick={() => onNavigate?.('services')} className="hover:text-white transition-colors">Services</button>
-          <button type="button" onClick={() => onNavigate?.('contact')} className="hover:text-white transition-colors">Contact</button>
+          <button type="button" onClick={() => onNavigate?.('about')} className="hover:text-white transition-colors cursor-pointer">About</button>
+          <button type="button" onClick={() => onNavigate?.('services')} className="hover:text-white transition-colors cursor-pointer">Services</button>
+          <button type="button" onClick={() => onNavigate?.('team')} className="hover:text-white transition-colors cursor-pointer">Team</button>
+          <button type="button" onClick={() => onNavigate?.('contact')} className="hover:text-white transition-colors cursor-pointer">Contact</button>
         </div>
-        <p>© 2026 Homewide Inc. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} LIVINOR Architecture Studio. All rights reserved.</p>
       </footer>
     </div>
   )
