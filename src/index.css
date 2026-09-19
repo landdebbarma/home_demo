@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+  
+  body {
+    @apply m-0 min-h-screen bg-[#121214] text-white antialiased overflow-x-hidden;
+  }
+}
+
+.font-syncopate {
+  font-family: 'Syncopate', sans-serif;
+}
+
+/* Custom scrollbar hiding for smooth horizontal strip */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
