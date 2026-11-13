@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { api, ApiError, instagramUrl, telUrl, usePageMeta, useSite } from '../lib/site'
+import { instagramUrl, telUrl, usePageMeta, useSite } from '../lib/site'
 import { d, Label, Lines } from '../components/ui'
 
 const TYPES = ['Architecture', 'Interior design', 'The Finishing Touch', 'Something else']
@@ -7,24 +7,33 @@ const TYPES = ['Architecture', 'Interior design', 'The Finishing Touch', 'Someth
 export default function Contact() {
   const site = useSite()
   usePageMeta('Contact — The Cornerstone Architect', 'Start a conversation about your home. The Cornerstone Architect, Bengaluru, Karnataka.')
-  const [state, setState] = useState<{ status: 'idle' | 'sending' | 'sent' | 'error'; message?: string; errors?: Record<string, string> }>({ status: 'idle' })
+  const [state, setState] = useState<{ status: 'idle' | 'sent' | 'error'; message?: string; errors?: Record<string, string> }>({ status: 'idle' })
   const preset = new URLSearchParams(location.search).get('service') === 'finishing-touch' ? 'The Finishing Touch' : ''
+  const c = site.content.contact
 
-  async function submit(e: FormEvent<HTMLFormElement>) {
+  // No server-side inbox: the enquiry is composed into the visitor's own email app, addressed to the studio.
+  function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const body = Object.fromEntries(new FormData(e.currentTarget))
-    setState({ status: 'sending' })
-    try {
-      await api('/api/enquiries', { method: 'POST', json: body })
-      setState({ status: 'sent' })
-    } catch (err) {
-      const ae = err instanceof ApiError ? err : null
-      setState({ status: 'error', message: ae?.message ?? 'We couldn’t send your message. Please check your connection, or email us directly.', errors: ae?.errors })
-    }
+    const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>
+    const errors: Record<string, string> = {}
+    if (!f.name?.trim()) errors.name = 'Please tell us your name.'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email?.trim() ?? '')) errors.email = 'Please enter a valid email address.'
+    if ((f.message?.trim().length ?? 0) < 10) errors.message = 'Please write a few words about your project.'
+    if (Object.keys(errors).length) return setState({ status: 'error', message: 'Please check the highlighted fields.', errors })
+    const subject = `Website enquiry${f.projectType ? ` — ${f.projectType}` : ''} from ${f.name.trim()}`
+    const body = [
+      f.message.trim(),
+      '',
+      '—',
+      `Name: ${f.name.trim()}`,
+      `Email: ${f.email.trim()}`,
+      f.phone?.trim() ? `Phone: ${f.phone.trim()}` : null,
+      f.location?.trim() ? `Project location: ${f.location.trim()}` : null,
+    ].filter((l) => l !== null).join('\n')
+    location.href = `mailto:${c.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    setState({ status: 'sent' })
   }
 
-  if (!site.ready) return null
-  const c = site.content.contact
   const err = state.errors ?? {}
 
   return (
@@ -59,8 +68,11 @@ export default function Contact() {
         {state.status === 'sent' ? (
           <div role="status" className="bg-linen p-10 md:p-14">
             <p className="t-script text-6xl text-umber">Thank you</p>
-            <p className="t-h3 mt-4">Your message has been received.</p>
-            <p className="mt-4 text-ink-soft">We’ll be in touch soon. For anything urgent, call {c.phone}.</p>
+            <p className="t-h3 mt-4">Your email is ready to send.</p>
+            <p className="mt-4 text-ink-soft">
+              Your email app should have opened with your message to {c.email} — press send there to reach us.
+              If nothing opened, email <a className="link-line" href={`mailto:${c.email}`}>{c.email}</a> or call {c.phone}.
+            </p>
             <button type="button" className="cta mt-10" onClick={() => setState({ status: 'idle' })}>
               <span className="cta-line" /> Send another message
             </button>
@@ -83,11 +95,9 @@ export default function Contact() {
               <Field name="location" label="Project location" autoComplete="address-level2" />
             </div>
             <Field name="message" label="About your project" textarea required error={err.message} />
-            {/* Honeypot: hidden from people and assistive tech. */}
-            <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
             <div className="flex flex-wrap items-center gap-6 pt-2">
-              <button type="submit" className="btn bg-ink text-ivory hover:!bg-umber hover:!border-umber disabled:opacity-60" disabled={state.status === 'sending'}>
-                {state.status === 'sending' ? 'Sending…' : 'Send enquiry'}
+              <button type="submit" className="btn bg-ink text-ivory hover:!bg-umber hover:!border-umber">
+                Write email
               </button>
               <p id="form-status" role="alert" className="text-sm text-cornerstone">
                 {state.status === 'error' ? state.message : ''}

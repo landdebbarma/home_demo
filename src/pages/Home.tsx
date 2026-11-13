@@ -1,5 +1,5 @@
 import { Link } from '../lib/router'
-import { telUrl, usePageMeta, useSite, type ProjectSummary } from '../lib/site'
+import { telUrl, usePageMeta, useSite, type Media, type Project } from '../lib/site'
 import { d, Img, Label, Lines, Paras } from '../components/ui'
 
 export default function Home() {
@@ -7,7 +7,7 @@ export default function Home() {
   usePageMeta('The Cornerstone Architect — Architecture & Interior Design, Bengaluru')
   if (!site.ready) return null
   const { home, contact } = site.content
-  const m = (id: string | null) => (id ? site.media[id] : null)
+  const m = (img: Media | null) => img
   const featured = site.projects.filter((p) => p.featured).slice(0, 4)
   const shown = featured.length ? featured : site.projects.slice(0, 3)
 
@@ -139,7 +139,7 @@ export default function Home() {
 }
 
 /** Alternating compositions: a wide lead, then an offset pair, then wide again. */
-function ProjectsShowcase({ projects }: { projects: ProjectSummary[] }) {
+function ProjectsShowcase({ projects }: { projects: Project[] }) {
   if (!projects.length) {
     return <p className="wrap text-ink-soft">Projects will appear here once published.</p>
   }
@@ -161,7 +161,7 @@ function ProjectsShowcase({ projects }: { projects: ProjectSummary[] }) {
   )
 }
 
-export function ProjectTile({ p, index, layout }: { p: ProjectSummary; index: number; layout: 'wide' | 'tall' | 'landscape' }) {
+export function ProjectTile({ p, index, layout }: { p: Project; index: number; layout: 'wide' | 'tall' | 'landscape' }) {
   const ratio = layout === 'wide' ? 'aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9]' : layout === 'tall' ? 'aspect-[4/5]' : 'aspect-[4/3]'
   const sizes = layout === 'wide' ? '100vw' : '(min-width: 768px) 45vw, 100vw'
   return (

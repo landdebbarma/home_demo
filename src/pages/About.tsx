@@ -1,5 +1,5 @@
 import { Link } from '../lib/router'
-import { usePageMeta, useSite } from '../lib/site'
+import { usePageMeta, useSite, type Media } from '../lib/site'
 import { d, Img, Label, Lines, Paras } from '../components/ui'
 
 export default function About() {
@@ -7,7 +7,7 @@ export default function About() {
   usePageMeta('About Ar. Jeanne Joseph — The Cornerstone Architect', 'Meet Ar. Jeanne Joseph, architect and interior designer, and the thinking behind The Cornerstone Architect.')
   if (!site.ready) return null
   const a = site.content.about
-  const m = (id: string | null) => (id ? site.media[id] : null)
+  const m = (img: Media | null) => img
   const [firstPara, ...restParas] = a.approach.split(/\n\s*\n/)
 
   return (

@@ -1,35 +1,34 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, type ReactNode } from 'react'
+import data from 'virtual:site-data'
 
-export type Media = { id: string; w: number; h: number; widths: number[]; alt: string; name?: string; createdAt?: number; inUse?: boolean }
-export type ProjectSummary = {
-  id: number; slug: string; title: string; category: string; location: string; year: string
-  summary: string; status: 'draft' | 'published' | 'unpublished'; featured: boolean; sort: number
-  cover: Media | null; updatedAt: number
+/** An image stored as responsive WebP files at `${path}-${width}.webp`. */
+export type Media = { id: string; path: string; w: number; h: number; widths: number[]; alt: string; caption: string }
+export type Project = {
+  id: string; slug: string; title: string; category: string; location: string; year: string
+  summary: string; body: string; status: 'draft' | 'published' | 'unpublished'; featured: boolean; order: number
+  cover: Media | null; gallery: Media[]; meta: { label: string; value: string }[]; createdAt: number; updatedAt: number
 }
-export type ProjectImage = { id: number; caption: string; alt: string; media: Media }
-export type Project = ProjectSummary & { body: string; meta: { label: string; value: string }[]; images: ProjectImage[] }
-export type Neighbour = { slug: string; title: string; cover: Media | null } | null
 
 type Item = { title: string; text: string }
 export type Content = {
   contact: { email: string; phone: string; instagram: string; location: string }
-  home: { heroEyebrow: string; heroTitle: string; heroImage: string | null; introTitle: string; introText: string; introImage: string | null; philosophy: Item[]; storyText: string; storyImage: string | null; finishingImage: string | null }
-  about: { role: string; portrait: string | null; intro: string; background: string; approach: string; values: Item[]; imageA: string | null; imageB: string | null }
+  home: { heroEyebrow: string; heroTitle: string; heroImage: Media | null; introTitle: string; introText: string; introImage: Media | null; philosophy: Item[]; storyText: string; storyImage: Media | null; finishingImage: Media | null }
+  about: { role: string; portrait: Media | null; intro: string; background: string; approach: string; values: Item[]; imageA: Media | null; imageB: Media | null }
   finishing: {
-    heroImage: string | null; heroText: string; whatWeDo: string; whatImage: string | null
-    transformations: { label: string; before: string | null; after: string | null }[]
-    detailsImage: string | null; experienceText: string; experienceImage: string | null; moodImage: string | null
-    holisticText: string; holisticImage: string | null; ctaImage: string | null
+    heroImage: Media | null; heroText: string; whatWeDo: string; whatImage: Media | null
+    transformations: { label: string; before: Media | null; after: Media | null }[]
+    detailsImage: Media | null; experienceText: string; experienceImage: Media | null; moodImage: Media | null
+    holisticText: string; holisticImage: Media | null; ctaImage: Media | null
   }
 }
 
 export class ApiError extends Error {
   status: number
-  errors?: Record<string, string>
-  constructor(status: number, message: string, errors?: Record<string, string>) {
+  extra: Record<string, unknown>
+  constructor(status: number, message: string, extra: Record<string, unknown> = {}) {
     super(message)
     this.status = status
-    this.errors = errors
+    this.extra = extra
   }
 }
 
@@ -41,27 +40,27 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
     headers: json !== undefined ? { 'Content-Type': 'application/json', ...rest.headers } : rest.headers,
     body: json !== undefined ? JSON.stringify(json) : rest.body,
   })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(res.status, data.error || `Request failed (${res.status})`, data.errors)
-  return data as T
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const { error, ...extra } = body
+    throw new ApiError(res.status, error || `Request failed (${res.status})`, extra)
+  }
+  return body as T
 }
 
-type Site = { content: Content; media: Record<string, Media>; projects: ProjectSummary[] }
-const Ctx = createContext<(Site & { ready: true }) | { ready: false; error?: string }>({ ready: false })
+// Content is baked in at build time (published projects only); a content commit triggers a new deploy.
+type Site = { ready: true; content: Content; projects: Project[] }
+const site: Site = { ready: true, ...(data as { content: Content; projects: Project[] }) }
+const Ctx = createContext<Site>(site)
 
-export function SiteProvider({ children }: { children: ReactNode }) {
-  const inlined = (window as { __SITE__?: Site }).__SITE__
-  const [state, setState] = useState<(Site & { ready: true }) | { ready: false; error?: string }>(inlined ? { ...inlined, ready: true } : { ready: false })
-  useEffect(() => {
-    if (inlined) return
-    api<Site>('/api/site')
-      .then((s) => setState({ ...s, ready: true }))
-      .catch((e) => setState({ ready: false, error: e.message }))
-  }, [inlined])
-  return <Ctx.Provider value={state}>{children}</Ctx.Provider>
+export function SiteProvider({ children, value = site }: { children: ReactNode; value?: Site }) {
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
-
 export const useSite = () => useContext(Ctx)
+
+/** How an image + width becomes a URL. The admin preview swaps this for not-yet-deployed images. */
+export const defaultImageUrl = (m: Media, w: number) => `${m.path}-${w}.webp`
+export const ImageUrlContext = createContext(defaultImageUrl)
 
 /** Keeps document title/description in sync during client-side navigation. */
 export function usePageMeta(title: string, description?: string) {
@@ -71,6 +70,5 @@ export function usePageMeta(title: string, description?: string) {
   }, [title, description])
 }
 
-export const mediaUrl = (m: Media, w: number, fmt: 'webp' | 'avif' = 'webp') => `/uploads/${m.id}/${w}.${fmt}`
 export const instagramUrl = (handle: string) => `https://www.instagram.com/${handle.replace(/^@/, '')}/`
 export const telUrl = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`

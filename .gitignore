@@ -23,6 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Runtime data (database + uploaded images)
-data/
+# Local secrets and Vercel CLI state
 .env
+.vercel

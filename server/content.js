@@ -1,99 +1,119 @@
-import { db } from './db.js'
+// Content model + server-side validation. The browser sends whole documents; nothing is trusted:
+// every field is rebuilt here from a whitelist with type and length limits.
 
-/**
- * Default editable content. Image fields hold media ids (filled by the seed).
- * Text wrapped in [square brackets] is a placeholder: the site renders it visibly as "to be supplied".
- * Long text fields: paragraphs are separated by a blank line.
- */
-export const DEFAULTS = {
-  contact: {
-    email: 'ar.jeannejoseph@gmail.com',
-    phone: '+91 97899 36722',
-    instagram: 'thecornerstonearchitect',
-    location: 'Bengaluru, Karnataka, India',
-  },
-  home: {
-    heroEyebrow: 'Architecture & Interior Design — Bengaluru',
-    heroTitle: 'Homes built on a quiet, lasting foundation.',
-    heroImage: null,
-    introTitle: 'An architecture and interior practice, led by Ar. Jeanne Joseph.',
-    introText:
-      'The Cornerstone Architect shapes homes from the first line of the plan to the final finishing touch. Every project begins with how you live — the light you wake to, the rooms you gather in, the corners you retreat to — and is built outward from there.',
-    introImage: null,
-    philosophy: [
-      { title: 'Space', text: 'Proportion, light and the way you move through a home are resolved first. A well-planned room needs very little to feel generous.' },
-      { title: 'Material', text: 'Natural textures and honest finishes, chosen for how they feel and how they age, not only for how they photograph.' },
-      { title: 'Function', text: 'Storage, routine and everyday use are drawn in early, so the home works as quietly as it looks.' },
-      { title: 'Sensibility', text: 'Restraint over excess. Each element earns its place — the personality lives in the details.' },
-    ],
-    storyText:
-      'Jeanne moves between architecture and interiors as one continuous conversation — about proportion, light and the personal details that make a space feel like yours.\n\n[A short personal note from Ar. Jeanne Joseph — to be supplied.]',
-    storyImage: null,
-    finishingImage: null,
-  },
-  about: {
-    role: 'Architect & Interior Designer',
-    portrait: null,
-    intro: '[Personal introduction from Ar. Jeanne Joseph — a few paragraphs in her own voice: how she came to architecture, and what she cares about in a home.]',
-    background: '[Professional background — education, practice history and experience. To be supplied by the studio.]',
-    approach:
-      'Architecture and interiors are not separate stages here. The same eye that resolves the plan carries through to the materials, the lighting and, finally, the furniture and objects that make a room lived-in.\n\nWe take the time to understand your space, your lifestyle and your personal taste before bringing the details together — so that what is built feels cohesive, warm and personal.',
-    values: [
-      { title: 'You first', text: 'Design begins with your lifestyle, your needs and how you live — not with a style.' },
-      { title: 'Thoughtful selection', text: 'Every material, finish and piece is chosen with purpose.' },
-      { title: 'Cohesive storytelling', text: 'A home should have flow, function and feeling, from room to room.' },
-      { title: 'Relationship-driven', text: 'Guidance that helps you make confident decisions throughout the process.' },
-    ],
-    imageA: null,
-    imageB: null,
-  },
-  finishing: {
-    heroImage: null,
-    heroText: 'Interior finishing & curation services. A signature service from The Cornerstone Architect.',
-    whatWeDo:
-      'A beautiful home is more than its fixed interiors. It is the furniture, lighting, textures, colours and personal details that bring a space together.\n\nWe curate these finishing elements around your existing interiors — from furniture and rugs to lighting, fabrics, art and décor, creating a home that feels cohesive, warm and personal.\n\nThrough personalised mood boards, thoughtful product research and guided showroom visits, we make the process of choosing the right pieces simple, enjoyable and uniquely yours.',
-    whatImage: null,
-    transformations: [
-      { label: 'Living room', before: null, after: null },
-      { label: 'Bedroom', before: null, after: null },
-    ],
-    detailsImage: null,
-    experienceText:
-      'The Finishing Touch is a guided design experience where every choice is made with intention. We take the time to understand your space, your lifestyle and your personal taste before bringing the details together.',
-    experienceImage: null,
-    moodImage: null,
-    holisticText:
-      'Our work doesn’t stop at curating the right pieces. We guide you in bringing them together with intention — placing, layering and styling each element where it belongs to create a space that feels harmonious, balanced and beautifully yours.',
-    holisticImage: null,
-    ctaImage: null,
-  },
+export const PROJECTS_FILE = 'content/projects.json'
+export const SITE_FILE = 'content/site-content.json'
+
+export class ValidationError extends Error {
+  status = 422
+}
+const fail = (msg) => {
+  throw new ValidationError(msg)
 }
 
-export function getContent() {
-  const out = {}
-  const rows = Object.fromEntries(db.prepare('SELECT key, value FROM content').all().map((r) => [r.key, JSON.parse(r.value)]))
-  for (const [key, defaults] of Object.entries(DEFAULTS)) out[key] = { ...defaults, ...(rows[key] || {}) }
-  return out
+const str = (v, max, label, { required = false } = {}) => {
+  if (v === undefined || v === null) v = ''
+  if (typeof v !== 'string') fail(`${label} must be text.`)
+  v = v.trim()
+  if (required && !v) fail(`${label} is required.`)
+  if (v.length > max) fail(`${label} is too long (max ${max} characters).`)
+  return v
 }
 
-/** Only known keys/fields are stored; values keep the default's shape (string | null id | array). */
-export function setContent(key, value) {
-  const defaults = DEFAULTS[key]
-  if (!defaults || typeof value !== 'object' || !value) return null
-  const clean = {}
-  for (const [field, def] of Object.entries(defaults)) {
-    if (!(field in value)) continue
-    const v = value[field]
-    if (Array.isArray(def)) {
-      if (!Array.isArray(v)) continue
-      clean[field] = v.slice(0, 20).map((item) =>
-        Object.fromEntries(Object.keys(def[0]).map((k) => [k, typeof item?.[k] === 'string' ? item[k].slice(0, 4000) : null])),
-      )
-    } else if (v === null || typeof v === 'string') {
-      clean[field] = v === null ? null : v.slice(0, 8000)
-    }
+const IMAGE_PATH = /^\/uploads\/(projects\/[a-z0-9-]{1,80}|site)\/[a-f0-9]{12}$/
+/** { id, path, w, h, widths, alt, caption } — files live at public{path}-{width}.webp */
+export function cleanImage(x, label) {
+  if (x === null || x === undefined) return null
+  if (typeof x !== 'object') fail(`${label}: invalid image.`)
+  if (!/^[a-f0-9]{12}$/.test(x.id) || !IMAGE_PATH.test(x.path) || !x.path.endsWith(x.id)) fail(`${label}: invalid image reference.`)
+  const int = (n, max) => Number.isInteger(n) && n > 0 && n <= max
+  if (!int(x.w, 20000) || !int(x.h, 20000)) fail(`${label}: invalid image size.`)
+  if (!Array.isArray(x.widths) || !x.widths.length || x.widths.length > 6 || !x.widths.every((w) => int(w, 2400))) fail(`${label}: invalid image widths.`)
+  return {
+    id: x.id, path: x.path, w: x.w, h: x.h, widths: [...new Set(x.widths)].sort((a, b) => a - b),
+    alt: str(x.alt, 300, `${label} alt text`), caption: str(x.caption, 300, `${label} caption`),
   }
-  const merged = { ...(getContent()[key] || {}), ...clean }
-  db.prepare('INSERT INTO content (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, JSON.stringify(merged))
-  return merged
+}
+export const imageFiles = (img) => (img ? img.widths.map((w) => `public${img.path}-${w}.webp`) : [])
+
+const STATUSES = ['draft', 'published', 'unpublished']
+export function cleanProjects(doc) {
+  if (!doc || !Array.isArray(doc.projects)) fail('Invalid projects document.')
+  if (doc.projects.length > 200) fail('Too many projects.')
+  const slugs = new Set()
+  const ids = new Set()
+  return {
+    projects: doc.projects.map((p, i) => {
+      const label = `Project ${i + 1}`
+      if (!p || typeof p !== 'object') fail(`${label}: invalid.`)
+      if (typeof p.id !== 'string' || !/^[a-z0-9]{8,24}$/.test(p.id) || ids.has(p.id)) fail(`${label}: invalid id.`)
+      ids.add(p.id)
+      const title = str(p.title, 160, `${label} title`, { required: true })
+      const slug = str(p.slug, 80, `"${title}" web address`, { required: true })
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) fail(`"${title}": the web address may only use lowercase letters, numbers and dashes.`)
+      if (slugs.has(slug)) fail(`Two projects use the web address "${slug}".`)
+      slugs.add(slug)
+      if (!STATUSES.includes(p.status)) fail(`"${title}": invalid status.`)
+      const cover = cleanImage(p.cover, `"${title}" cover`)
+      if (p.status === 'published' && !cover) fail(`"${title}": add a cover image before publishing.`)
+      if (!Array.isArray(p.gallery) || p.gallery.length > 60) fail(`"${title}": invalid gallery (max 60 images).`)
+      if (!Array.isArray(p.meta) || p.meta.length > 12) fail(`"${title}": invalid details.`)
+      return {
+        id: p.id, slug, title,
+        category: str(p.category, 80, 'Category'), location: str(p.location, 120, 'Location'), year: str(p.year, 20, 'Year'),
+        summary: str(p.summary, 1000, 'Short description'), body: str(p.body, 20000, 'Full description'),
+        status: p.status, featured: Boolean(p.featured), order: Number.isInteger(p.order) ? p.order : 0,
+        cover,
+        gallery: p.gallery.map((g, j) => cleanImage(g, `"${title}" image ${j + 1}`)),
+        meta: p.meta.map((m) => ({ label: str(m?.label, 60, 'Detail name'), value: str(m?.value, 200, 'Detail value') })).filter((m) => m.label || m.value),
+        createdAt: Number.isFinite(p.createdAt) ? p.createdAt : Date.now(),
+        updatedAt: Number.isFinite(p.updatedAt) ? p.updatedAt : Date.now(),
+      }
+    }),
+  }
+}
+
+// Site content shape: 'text' | 'image' | [ { field: 'text' | 'image' } ] (lists)
+const ITEM = { title: 'text', text: 'text' }
+const SITE_SCHEMA = {
+  contact: { email: 'text', phone: 'text', instagram: 'text', location: 'text' },
+  home: { heroEyebrow: 'text', heroTitle: 'text', heroImage: 'image', introTitle: 'text', introText: 'text', introImage: 'image', philosophy: [ITEM], storyText: 'text', storyImage: 'image', finishingImage: 'image' },
+  about: { role: 'text', portrait: 'image', intro: 'text', background: 'text', approach: 'text', values: [ITEM], imageA: 'image', imageB: 'image' },
+  finishing: {
+    heroImage: 'image', heroText: 'text', whatWeDo: 'text', whatImage: 'image',
+    transformations: [{ label: 'text', before: 'image', after: 'image' }],
+    detailsImage: 'image', experienceText: 'text', experienceImage: 'image', moodImage: 'image',
+    holisticText: 'text', holisticImage: 'image', ctaImage: 'image',
+  },
+}
+
+function cleanValue(type, v, label) {
+  if (type === 'text') return str(v, 8000, label)
+  if (type === 'image') return cleanImage(v, label)
+  if (!Array.isArray(v) || v.length > 20) fail(`${label}: invalid list.`)
+  return v.map((item, i) => Object.fromEntries(Object.entries(type[0]).map(([k, t]) => [k, cleanValue(t, item?.[k], `${label} item ${i + 1}`)])))
+}
+
+export function cleanSite(doc) {
+  if (!doc || typeof doc !== 'object') fail('Invalid site content.')
+  return Object.fromEntries(
+    Object.entries(SITE_SCHEMA).map(([section, fields]) => [
+      section,
+      Object.fromEntries(Object.entries(fields).map(([k, t]) => [k, cleanValue(t, doc[section]?.[k], `${section}.${k}`)])),
+    ]),
+  )
+}
+export const contactValid = (site) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(site.contact.email)
+
+/** Every image file path referenced by a projects or site document. */
+export function referencedFiles(projectsDoc, siteDoc) {
+  const out = new Set()
+  const walk = (v) => {
+    if (!v || typeof v !== 'object') return
+    if (typeof v.path === 'string' && Array.isArray(v.widths)) return imageFiles(v).forEach((f) => out.add(f))
+    Object.values(v).forEach(walk)
+  }
+  walk(projectsDoc)
+  walk(siteDoc)
+  return out
 }

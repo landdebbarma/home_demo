@@ -1,0 +1,239 @@
+{
+  "projects": [
+    {
+      "id": "a1bd48fc02c8",
+      "slug": "sample-project-01",
+      "title": "Sample Project 01",
+      "category": "Residential Interior",
+      "location": "Bengaluru",
+      "year": "",
+      "summary": "[Sample project — this entry exists to demonstrate the layout. Replace the title, text and images from the admin dashboard, or delete it.]",
+      "body": "[Project narrative — the brief, the site, the key design moves and the materials.]",
+      "status": "published",
+      "featured": true,
+      "order": 0,
+      "cover": {
+        "id": "78594b17dfde",
+        "path": "/uploads/projects/sample-project-01/78594b17dfde",
+        "w": 689,
+        "h": 622,
+        "widths": [
+          480,
+          689
+        ],
+        "alt": "The same living room after styling, with sofa, rug, lighting and plants",
+        "caption": ""
+      },
+      "gallery": [
+        {
+          "id": "a8b4e916761c",
+          "path": "/uploads/projects/sample-project-01/a8b4e916761c",
+          "w": 1628,
+          "h": 1080,
+          "widths": [
+            480,
+            960,
+            1600,
+            1628
+          ],
+          "alt": "Living room with a pale sofa, lit wall niches and two pendant lights",
+          "caption": ""
+        },
+        {
+          "id": "4a4c70ac6ae3",
+          "path": "/uploads/projects/sample-project-01/4a4c70ac6ae3",
+          "w": 643,
+          "h": 622,
+          "widths": [
+            480,
+            643
+          ],
+          "alt": "Empty living room before styling",
+          "caption": ""
+        },
+        {
+          "id": "82e3d76761bb",
+          "path": "/uploads/projects/sample-project-01/82e3d76761bb",
+          "w": 1382,
+          "h": 622,
+          "widths": [
+            480,
+            960,
+            1382
+          ],
+          "alt": "Styled vase, framed art, table lamp, cushion and fabric swatches",
+          "caption": ""
+        },
+        {
+          "id": "5b4d94f5d72e",
+          "path": "/uploads/projects/sample-project-01/5b4d94f5d72e",
+          "w": 1342,
+          "h": 950,
+          "widths": [
+            480,
+            960,
+            1342
+          ],
+          "alt": "Mood board with a living room, material swatches, colour chips and furniture",
+          "caption": ""
+        }
+      ],
+      "meta": [
+        {
+          "label": "Scope",
+          "value": "[To be supplied]"
+        }
+      ],
+      "createdAt": 1794602335210,
+      "updatedAt": 1794602335210
+    },
+    {
+      "id": "3a2224af0f5b",
+      "slug": "sample-project-02",
+      "title": "Sample Project 02",
+      "category": "Interior Styling",
+      "location": "Bengaluru",
+      "year": "",
+      "summary": "[Sample project — this entry exists to demonstrate the layout. Replace the title, text and images from the admin dashboard, or delete it.]",
+      "body": "[Project narrative — the brief, the site, the key design moves and the materials.]",
+      "status": "published",
+      "featured": true,
+      "order": 1,
+      "cover": {
+        "id": "693ac5bd33eb",
+        "path": "/uploads/projects/sample-project-02/693ac5bd33eb",
+        "w": 689,
+        "h": 638,
+        "widths": [
+          480,
+          689
+        ],
+        "alt": "The same bedroom after styling, with bed, side tables, lamps and artwork",
+        "caption": ""
+      },
+      "gallery": [
+        {
+          "id": "7bbe2df65ef2",
+          "path": "/uploads/projects/sample-project-02/7bbe2df65ef2",
+          "w": 643,
+          "h": 638,
+          "widths": [
+            480,
+            643
+          ],
+          "alt": "Empty bedroom before styling",
+          "caption": ""
+        },
+        {
+          "id": "efa3f3627428",
+          "path": "/uploads/projects/sample-project-02/efa3f3627428",
+          "w": 1343,
+          "h": 949,
+          "widths": [
+            480,
+            960,
+            1343
+          ],
+          "alt": "A designer styling objects on open metal shelving",
+          "caption": ""
+        },
+        {
+          "id": "8c3d95daf44e",
+          "path": "/uploads/projects/sample-project-02/8c3d95daf44e",
+          "w": 700,
+          "h": 906,
+          "widths": [
+            480,
+            700
+          ],
+          "alt": "Hands arranging tile, stone, timber and fabric samples on a floor plan",
+          "caption": ""
+        }
+      ],
+      "meta": [
+        {
+          "label": "Scope",
+          "value": "[To be supplied]"
+        }
+      ],
+      "createdAt": 1794602337181,
+      "updatedAt": 1794602337181
+    },
+    {
+      "id": "293b5080bece",
+      "slug": "sample-project-03",
+      "title": "Sample Project 03",
+      "category": "Residential Interior",
+      "location": "Bengaluru",
+      "year": "",
+      "summary": "[Sample project — this entry exists to demonstrate the layout. Replace the title, text and images from the admin dashboard, or delete it.]",
+      "body": "[Project narrative — the brief, the site, the key design moves and the materials.]",
+      "status": "published",
+      "featured": true,
+      "order": 2,
+      "cover": {
+        "id": "a8b4e916761c",
+        "path": "/uploads/projects/sample-project-03/a8b4e916761c",
+        "w": 1628,
+        "h": 1080,
+        "widths": [
+          480,
+          960,
+          1600,
+          1628
+        ],
+        "alt": "Living room with a pale sofa, lit wall niches and two pendant lights",
+        "caption": ""
+      },
+      "gallery": [
+        {
+          "id": "5b4d94f5d72e",
+          "path": "/uploads/projects/sample-project-03/5b4d94f5d72e",
+          "w": 1342,
+          "h": 950,
+          "widths": [
+            480,
+            960,
+            1342
+          ],
+          "alt": "Mood board with a living room, material swatches, colour chips and furniture",
+          "caption": ""
+        },
+        {
+          "id": "82e3d76761bb",
+          "path": "/uploads/projects/sample-project-03/82e3d76761bb",
+          "w": 1382,
+          "h": 622,
+          "widths": [
+            480,
+            960,
+            1382
+          ],
+          "alt": "Styled vase, framed art, table lamp, cushion and fabric swatches",
+          "caption": ""
+        },
+        {
+          "id": "08a090bdadad",
+          "path": "/uploads/projects/sample-project-03/08a090bdadad",
+          "w": 1200,
+          "h": 800,
+          "widths": [
+            480,
+            960,
+            1200
+          ],
+          "alt": "Hands arranging fabric and stone samples during a consultation",
+          "caption": ""
+        }
+      ],
+      "meta": [
+        {
+          "label": "Scope",
+          "value": "[To be supplied]"
+        }
+      ],
+      "createdAt": 1794602338263,
+      "updatedAt": 1794602338263
+    }
+  ]
+}

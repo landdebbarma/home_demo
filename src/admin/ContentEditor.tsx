@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from '../lib/router'
-import { api, type Content, type Media } from '../lib/site'
+import { ApiError, type Content, type Media } from '../lib/site'
 import { errText, PageTitle, Thumb, useUi } from './Admin'
-import { MediaPicker } from './MediaLibrary'
+import { ACCEPT, merge3, useAdmin } from './store'
 
 type Sub = { key: string; label: string; type: 'text' | 'textarea' | 'image' }
 type Field = (Sub & { hint?: string }) | { key: string; label: string; type: 'list'; item: Sub[]; hint?: string }
@@ -68,56 +68,73 @@ const SECTIONS: Section[] = [
 ]
 
 type Values = Record<string, unknown>
+type Draft = Record<keyof Content, Values>
+type Value = string | Media | null
 
 export default function ContentEditor() {
   const { toast } = useUi()
+  const { data, save, load } = useAdmin()
   const [tab, setTab] = useState<Section['key']>('contact')
-  const [data, setData] = useState<{ content: Content; media: Record<string, Media> } | null>(null)
-  const [draft, setDraft] = useState<Values | null>(null)
+  // The whole site document is edited together and saved as one commit.
+  const [draft, setDraft] = useState<Draft>(() => structuredClone(data!.site) as unknown as Draft)
+  const [started, setStarted] = useState<Draft>(() => structuredClone(data!.site) as unknown as Draft) // version the draft is based on
   const [saving, setSaving] = useState(false)
-  const [picker, setPicker] = useState<((m: Media) => void) | null>(null)
+  const [conflict, setConflict] = useState<string | null>(null)
 
-  useEffect(() => {
-    api<{ content: Content; media: Record<string, Media> }>('/api/admin/content')
-      .then((d) => { setData(d); setDraft({ ...(d.content.contact as Values) }) })
-      .catch((e) => toast(errText(e), 'error'))
-  }, [toast])
-
-  if (!data || !draft) return <p>Loading…</p>
   const section = SECTIONS.find((s) => s.key === tab)!
-  const media = data.media
-  const dirty = JSON.stringify(draft) !== JSON.stringify(data.content[tab])
+  const changed = SECTIONS.filter((s) => JSON.stringify(draft[s.key]) !== JSON.stringify(data!.site[s.key])).map((s) => s.label)
+  const dirty = changed.length > 0
+  const setField = (k: string, v: unknown) => setDraft((d) => ({ ...d, [tab]: { ...d[tab], [k]: v } }))
 
-  const pick = (apply: (id: string) => void) => setPicker(() => (m: Media) => {
-    data.media[m.id] = m
-    apply(m.id)
-    setPicker(null)
-  })
-
-  async function save() {
+  async function onSave() {
     setSaving(true)
+    setConflict(null)
     try {
-      const r = await api<{ content: Content[keyof Content]; media: Record<string, Media> }>(`/api/admin/content/${tab}`, { method: 'PUT', json: draft })
-      setData((d) => d && { content: { ...d.content, [tab]: r.content }, media: { ...d.media, ...r.media } })
-      setDraft({ ...(r.content as Values) })
-      toast(`${section.label} saved — the website is updated.`)
+      const saved = await save({ site: draft as unknown as Content, message: `Update website content (${changed.join(', ')})` })
+      setDraft(structuredClone(saved.site) as unknown as Draft)
+      setStarted(structuredClone(saved.site) as unknown as Draft)
+      toast('Saved to GitHub — publishing to the website (see status in the sidebar).')
     } catch (e) {
-      toast(errText(e), 'error')
+      if (e instanceof ApiError && e.status === 409) setConflict(e.message)
+      else toast(errText(e), 'error')
     } finally {
       setSaving(false)
     }
   }
 
+  const values = draft[tab]
   return (
     <div className="pb-24">
       <PageTitle>Website Content</PageTitle>
+      {conflict && (
+        <div role="alert" className="mb-6 rounded border border-[#7A2A2A]/40 bg-[#F7E9E9] p-4 text-sm">
+          {conflict}
+          <button type="button" className="abtn ml-3" onClick={async () => {
+            const fresh = await load()
+            if (!fresh) return
+            setConflict(null)
+            // Field-by-field: keep what was changed here, take the latest for everything else.
+            const latest = fresh.site as unknown as Draft
+            const both: string[] = []
+            const merged = Object.fromEntries(SECTIONS.map((sec) => {
+              const r = merge3(draft[sec.key], started[sec.key], latest[sec.key])
+              both.push(...r.both.map((k) => `${sec.label} → ${sec.fields.find((f) => f.key === k)?.label ?? k}`))
+              return [sec.key, r.merged]
+            })) as Draft
+            setDraft(merged)
+            setStarted(structuredClone(latest))
+            toast(both.length
+              ? `Loaded the latest version. Changed both here and elsewhere: ${both.join('; ')} — your version is kept; review before saving.`
+              : 'Loaded the latest version and kept your changes. Review and save again.')
+          }}>Load latest version</button>
+        </div>
+      )}
       <div role="tablist" className="mb-6 flex flex-wrap gap-2">
         {SECTIONS.map((s) => (
-          <button key={s.key} role="tab" type="button" aria-selected={tab === s.key} onClick={() => {
-            if (dirty && !window.confirm('Discard unsaved changes in this section?')) return
-            setTab(s.key)
-            setDraft({ ...(data.content[s.key] as Values) })
-          }} className={`rounded px-4 py-2 ${tab === s.key ? 'bg-ink text-ivory' : 'border border-ink/15 bg-white hover:bg-linen'}`}>{s.label}</button>
+          <button key={s.key} role="tab" type="button" aria-selected={tab === s.key} onClick={() => setTab(s.key)}
+            className={`rounded px-4 py-2 ${tab === s.key ? 'bg-ink text-ivory' : 'border border-ink/15 bg-white hover:bg-linen'}`}>
+            {s.label}{changed.includes(s.label) && <span className="ml-1.5" aria-label="(unsaved changes)">•</span>}
+          </button>
         ))}
       </div>
       {section.note && <p className="mb-5 text-sm text-ink-soft">{section.note} {section.key === 'home' && <Link href="/admin/projects" className="underline">Manage projects</Link>}</p>}
@@ -128,9 +145,9 @@ export default function ContentEditor() {
             <span className="font-medium">{f.label}</span>
             {f.hint && <span className="text-sm text-ink-soft">{f.hint}</span>}
             {f.type === 'list' ? (
-              <ListField value={(draft[f.key] as Values[]) ?? []} item={f.item} media={media} onPick={pick} onChange={(v) => setDraft({ ...draft, [f.key]: v })} />
+              <ListField value={(values[f.key] as Values[]) ?? []} item={f.item} onChange={(v) => setField(f.key, v)} />
             ) : (
-              <Input sub={f} value={draft[f.key] as string | null} media={media} onPick={pick} onChange={(v) => setDraft({ ...draft, [f.key]: v })} />
+              <Input sub={f} value={values[f.key] as Value} onChange={(v) => setField(f.key, v)} />
             )}
           </div>
         ))}
@@ -138,34 +155,57 @@ export default function ContentEditor() {
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-ivory/95 backdrop-blur lg:left-[250px]">
         <div className="flex items-center justify-end gap-3 px-5 py-3 md:px-10">
-          <span className="mr-auto text-sm text-ink-soft" aria-live="polite">{dirty ? 'You have unsaved changes.' : 'All changes saved.'}</span>
-          <button type="button" className="abtn" disabled={!dirty || saving} onClick={() => setDraft({ ...(data.content[tab] as Values) })}>Discard</button>
-          <button type="button" className="abtn abtn-primary" disabled={!dirty || saving} onClick={save}>{saving ? 'Saving…' : 'Save section'}</button>
+          <span className="mr-auto text-sm text-ink-soft" aria-live="polite">{saving ? 'Saving to GitHub…' : dirty ? `Unsaved changes: ${changed.join(', ')}` : 'No unsaved changes.'}</span>
+          <button type="button" className="abtn" disabled={!dirty || saving} onClick={() => setDraft(structuredClone(data!.site) as unknown as Draft)}>Discard</button>
+          <button type="button" className="abtn abtn-primary" disabled={!dirty || saving} onClick={onSave}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </div>
-      <MediaPicker open={!!picker} onPick={(m) => picker?.(m)} onClose={() => setPicker(null)} />
     </div>
   )
 }
 
-function Input({ sub, value, media, onChange, onPick }: { sub: Sub; value: string | null; media: Record<string, Media>; onChange: (v: string | null) => void; onPick: (apply: (id: string) => void) => void }) {
-  if (sub.type === 'image') {
-    const m = value ? media[value] : null
-    return (
-      <div className="flex items-center gap-4">
-        <Thumb media={m} className="h-20 w-28 rounded-sm" />
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="abtn" onClick={() => onPick((id) => onChange(id))}>{m ? 'Change image' : 'Choose image'}</button>
-          {m && <button type="button" className="abtn" onClick={() => onChange(null)}>Remove</button>}
-        </div>
-      </div>
-    )
-  }
-  if (sub.type === 'textarea') return <textarea aria-label={sub.label} value={value ?? ''} onChange={(e) => onChange(e.target.value)} rows={5} className="ainput leading-relaxed" />
-  return <input aria-label={sub.label} value={value ?? ''} onChange={(e) => onChange(e.target.value)} className="ainput" />
+function Input({ sub, value, onChange }: { sub: Sub; value: Value; onChange: (v: Value) => void }) {
+  if (sub.type === 'image') return <ImageField value={value as Media | null} label={sub.label} onChange={onChange} />
+  if (sub.type === 'textarea') return <textarea aria-label={sub.label} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} rows={5} className="ainput leading-relaxed" />
+  return <input aria-label={sub.label} value={(value as string) ?? ''} onChange={(e) => onChange(e.target.value)} className="ainput" />
 }
 
-function ListField({ value, item, media, onChange, onPick }: { value: Values[]; item: Sub[]; media: Record<string, Media>; onChange: (v: Values[]) => void; onPick: (apply: (id: string) => void) => void }) {
+/** Upload or replace a page image; files nothing uses any more are deleted from the repository on save. */
+function ImageField({ value, label, onChange }: { value: Media | null; label: string; onChange: (m: Media | null) => void }) {
+  const { upload } = useAdmin()
+  const { toast } = useUi()
+  const input = useRef<HTMLInputElement>(null)
+  const [status, setStatus] = useState<string | null>(null)
+  async function pick(file: File | undefined) {
+    if (!file) return
+    try {
+      const img = await upload(file, 'site', (pct) => setStatus(pct < 100 ? `Uploading… ${pct}%` : 'Optimising…'))
+      onChange({ ...img, alt: value?.alt || '' })
+    } catch (e) {
+      toast(errText(e), 'error')
+    } finally {
+      setStatus(null)
+      if (input.current) input.current.value = ''
+    }
+  }
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center gap-4">
+        <Thumb media={value} className="h-20 w-28 rounded-sm" />
+        <div className="flex flex-wrap gap-2">
+          {status ? <span role="status" className="text-sm text-ink-soft">{status}</span> : (
+            <button type="button" className="abtn" onClick={() => input.current?.click()} aria-label={`${value ? 'Replace' : 'Upload'} ${label}`}>{value ? 'Replace image' : 'Upload image'}</button>
+          )}
+          {value && !status && <button type="button" className="abtn" onClick={() => onChange(null)}>Remove</button>}
+        </div>
+        <input ref={input} type="file" accept={ACCEPT} className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
+      </div>
+      {value && <input aria-label={`Alt text for ${label}`} value={value.alt} onChange={(e) => onChange({ ...value, alt: e.target.value })} placeholder="Alt text — describe the image" className="ainput text-sm" />}
+    </div>
+  )
+}
+
+function ListField({ value, item, onChange }: { value: Values[]; item: Sub[]; onChange: (v: Values[]) => void }) {
   const blank = () => Object.fromEntries(item.map((s) => [s.key, s.type === 'image' ? null : '']))
   return (
     <div className="grid gap-3">
@@ -173,10 +213,10 @@ function ListField({ value, item, media, onChange, onPick }: { value: Values[]; 
         <fieldset key={i} className="grid gap-3 rounded border border-ink/10 p-4">
           <legend className="px-1 text-sm text-ink-soft">Item {i + 1}</legend>
           {item.map((s) => (
-            <label key={s.key} className="grid gap-1 text-sm">
-              {s.label}
-              <Input sub={s} value={row[s.key] as string | null} media={media} onPick={onPick} onChange={(v) => onChange(value.map((r, j) => (j === i ? { ...r, [s.key]: v } : r)))} />
-            </label>
+            <div key={s.key} className="grid gap-1 text-sm">
+              <span>{s.label}</span>
+              <Input sub={s} value={row[s.key] as Value} onChange={(v) => onChange(value.map((r, j) => (j === i ? { ...r, [s.key]: v } : r)))} />
+            </div>
           ))}
           <div className="flex gap-2">
             <button type="button" className="abtn px-3" disabled={i === 0} onClick={() => { const n = [...value]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; onChange(n) }} aria-label="Move up">↑</button>

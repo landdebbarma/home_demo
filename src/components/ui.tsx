@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { mediaUrl, type Media } from '../lib/site'
+import { useContext, type CSSProperties, type ReactNode } from 'react'
+import { ImageUrlContext, type Media } from '../lib/site'
 
 type ImgProps = {
   media: Media | null | undefined
@@ -12,8 +12,9 @@ type ImgProps = {
   vt?: string
 }
 
-/** Responsive AVIF/WebP picture with intrinsic dimensions (no layout shift). */
+/** Responsive WebP picture with intrinsic dimensions (no layout shift). */
 export function Img({ media, sizes, alt, priority, className = '', imgClassName = '', style, vt }: ImgProps) {
+  const url = useContext(ImageUrlContext)
   const s = { ...style, viewTransitionName: vt } as CSSProperties
   if (!media) {
     return (
@@ -22,14 +23,12 @@ export function Img({ media, sizes, alt, priority, className = '', imgClassName 
       </div>
     )
   }
-  const set = (fmt: 'avif' | 'webp') => media.widths.map((w) => `${mediaUrl(media, w, fmt)} ${w}w`).join(', ')
   const fallback = media.widths.find((w) => w >= 960) ?? media.widths.at(-1)!
   return (
     <picture className={`frame ${className}`} style={s}>
-      <source type="image/avif" srcSet={set('avif')} sizes={sizes} />
       <img
-        src={mediaUrl(media, fallback)}
-        srcSet={set('webp')}
+        src={url(media, fallback)}
+        srcSet={media.widths.map((w) => `${url(media, w)} ${w}w`).join(', ')}
         sizes={sizes}
         width={media.w}
         height={media.h}

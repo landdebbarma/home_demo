@@ -5,13 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "node --env-file-if-exists=.env --watch-path=server --disable-warning=ExperimentalWarning server/index.js",
     "build": "tsc -b && vite build",
-    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server/index.js",
-    "lint": "oxlint",
     "preview": "vite preview",
-    "test:e2e": "node --disable-warning=ExperimentalWarning tests/acceptance.mjs",
-    "test:ui": "node --disable-warning=ExperimentalWarning tests/admin-ui.mjs"
+    "lint": "oxlint",
+    "hash-password": "node scripts/hash-password.mjs",
+    "test:e2e": "node tests/acceptance.mjs",
+    "test:ui": "node tests/admin-ui.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -32,6 +31,6 @@
     "vite": "^8.3.0"
   },
   "engines": {
-    "node": ">=22.18"
+    "node": ">=22"
   }
 }

@@ -1,12 +1,8 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-
-const api = 'http://localhost:4310'
+import site from './vite.site.ts'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: {
-    proxy: { '/api': api, '/uploads': api, '/sitemap.xml': api, '/robots.txt': api },
-  },
+  plugins: [react(), tailwindcss(), site()],
 })

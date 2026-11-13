@@ -52,7 +52,7 @@ export default function FinishingTouch() {
   if (!site.ready) return null
   const f = site.content.finishing
   const c = site.content.contact
-  const m = (id: string | null) => (id ? site.media[id] : null)
+  const m = (img: Media | null) => img
 
   return (
     <>
@@ -102,7 +102,7 @@ export default function FinishingTouch() {
               <span className="whitespace-nowrap">Curated pieces</span> <span className="whitespace-nowrap">= Cohesive spaces</span>
             </p>
           </div>
-          <Transformations items={f.transformations.map((t) => ({ label: t.label, before: m(t.before), after: m(t.after) }))} />
+          <Transformations items={f.transformations} />
         </div>
       </section>
 

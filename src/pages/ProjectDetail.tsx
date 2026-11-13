@@ -1,36 +1,27 @@
-import { useEffect, useState } from 'react'
 import { Link } from '../lib/router'
-import { api, ApiError, usePageMeta, useSite, type Neighbour, type Project, type ProjectImage } from '../lib/site'
+import { usePageMeta, useSite, type Media, type Project } from '../lib/site'
 import { d, Img, Label, Lines, Paras, T } from '../components/ui'
 import NotFound from './NotFound'
 
-type Detail = { project: Project; prev: Neighbour; next: Neighbour }
+type Neighbour = Pick<Project, 'slug' | 'title' | 'cover'> | null
 
 export default function ProjectDetail({ slug }: { slug: string }) {
-  const site = useSite()
-  const [data, setData] = useState<Detail | null>(null)
-  const [missing, setMissing] = useState(false)
+  const { projects } = useSite()
+  const i = projects.findIndex((p) => p.slug === slug)
+  const project = projects[i]
+  usePageMeta(project ? `${project.title} — The Cornerstone Architect` : 'Page not found — The Cornerstone Architect', project?.summary.replace(/[[\]]/g, ''))
+  if (!project) return <NotFound />
+  const many = projects.length > 1
+  return <ProjectView project={project} prev={many ? projects.at(i - 1)! : null} next={many ? projects[(i + 1) % projects.length] : null} />
+}
 
-  // App keys this component by slug, so state starts fresh for every project.
-  useEffect(() => {
-    let live = true
-    api<Detail>(`/api/projects/${encodeURIComponent(slug)}`)
-      .then((r) => live && setData(r))
-      .catch((e) => live && e instanceof ApiError && e.status === 404 && setMissing(true))
-    return () => { live = false }
-  }, [slug])
-
-  // Render the hero immediately from the cached list so the cover can morph in from the grid.
-  const summary = data?.project ?? (site.ready ? site.projects.find((p) => p.slug === slug) : undefined)
-  usePageMeta(summary ? `${summary.title} — The Cornerstone Architect` : 'Project — The Cornerstone Architect', summary?.summary.replace(/[[\]]/g, ''))
-  if (missing) return <NotFound />
-  if (!summary) return <div className="min-h-screen" />
-  const p = data?.project
+/** The project page layout. Also used by the admin to preview unsaved drafts. */
+export function ProjectView({ project: p, prev, next }: { project: Project; prev: Neighbour; next: Neighbour }) {
   const facts = [
-    ['Category', summary.category],
-    ['Location', summary.location],
-    ['Year', summary.year],
-    ...(p?.meta.map((m) => [m.label, m.value]) ?? []),
+    ['Category', p.category],
+    ['Location', p.location],
+    ['Year', p.year],
+    ...p.meta.map((m) => [m.label, m.value]),
   ].filter(([, v]) => v)
 
   return (
@@ -39,18 +30,18 @@ export default function ProjectDetail({ slug }: { slug: string }) {
         <div className="md:col-span-8">
           <Label className="mb-6 text-umber">
             <Link href="/projects" className="link-line">Projects</Link>
-            {summary.category && <span className="text-ink-soft"> &nbsp;/&nbsp; {summary.category}</span>}
+            {p.category && <span className="text-ink-soft"> &nbsp;/&nbsp; {p.category}</span>}
           </Label>
-          <Lines as="h1" text={summary.title} className="t-display" />
+          <Lines as="h1" text={p.title} className="t-display" />
         </div>
-        {summary.location && (
+        {p.location && (
           <p className="t-label self-end text-ink-soft md:col-span-3 md:col-start-10 md:text-right" data-reveal style={d(2)}>
-            {[summary.location, summary.year].filter(Boolean).join(' — ')}
+            {[p.location, p.year].filter(Boolean).join(' — ')}
           </p>
         )}
       </header>
 
-      <Img media={summary.cover} sizes="100vw" priority className="aspect-[4/5] w-full sm:aspect-[16/9] lg:aspect-[2/1]" imgClassName="h-full" vt={`cover-${slug}`} />
+      <Img media={p.cover} sizes="100vw" priority className="aspect-[4/5] w-full sm:aspect-[16/9] lg:aspect-[2/1]" imgClassName="h-full" vt={`cover-${p.slug}`} />
 
       <section className="wrap grid gap-14 py-20 md:grid-cols-12 md:gap-8 md:py-32">
         <dl className="grid content-start gap-6 md:col-span-3" data-reveal>
@@ -62,8 +53,8 @@ export default function ProjectDetail({ slug }: { slug: string }) {
           ))}
         </dl>
         <div className="md:col-span-7 md:col-start-6">
-          {summary.summary && <Paras text={summary.summary} className="t-lead text-ink" />}
-          {p?.body && (
+          {p.summary && <Paras text={p.summary} className="t-lead text-ink" />}
+          {p.body && (
             <div className="mt-10" data-reveal style={d(1)}>
               <Paras text={p.body} />
             </div>
@@ -71,21 +62,21 @@ export default function ProjectDetail({ slug }: { slug: string }) {
         </div>
       </section>
 
-      {p && p.images.length > 0 && <Gallery images={p.images} />}
+      {p.gallery.length > 0 && <Gallery images={p.gallery} />}
 
-      {data?.next && (
+      {next && (
         <nav aria-label="More projects" className="mt-24 md:mt-40">
           <div className="wrap rule flex justify-between pt-6">
-            {data.prev ? (
-              <Link href={`/projects/${data.prev.slug}`} className="t-label link-line text-ink-soft">← {data.prev.title}</Link>
+            {prev && prev.slug !== next.slug ? (
+              <Link href={`/projects/${prev.slug}`} className="t-label link-line text-ink-soft">← {prev.title}</Link>
             ) : <span />}
             <Link href="/projects" className="t-label link-line text-ink-soft">All projects</Link>
           </div>
-          <Link href={`/projects/${data.next.slug}`} className="group on-dark relative mt-6 block overflow-hidden bg-ink text-ivory">
-            <Img media={data.next.cover} sizes="100vw" alt="" className="hover-zoom !absolute inset-0 h-full w-full opacity-60" imgClassName="h-full" vt={`cover-${data.next.slug}`} />
+          <Link href={`/projects/${next.slug}`} className="group on-dark relative mt-6 block overflow-hidden bg-ink text-ivory">
+            <Img media={next.cover} sizes="100vw" alt="" className="hover-zoom !absolute inset-0 h-full w-full opacity-60" imgClassName="h-full" vt={`cover-${next.slug}`} />
             <div className="wrap relative flex min-h-[60svh] flex-col justify-end py-14">
               <p className="t-label mb-5 text-ivory/80">Next project</p>
-              <p className="t-display">{data.next.title}</p>
+              <p className="t-display">{next.title}</p>
             </div>
           </Link>
         </nav>
@@ -95,8 +86,8 @@ export default function ProjectDetail({ slug }: { slug: string }) {
 }
 
 /** Editorial gallery: a repeating rhythm of full-bleed, offset pair, and captioned single. */
-function Gallery({ images }: { images: ProjectImage[] }) {
-  const blocks: ProjectImage[][] = []
+function Gallery({ images }: { images: Media[] }) {
+  const blocks: Media[][] = []
   for (let i = 0; i < images.length; ) {
     const step = [1, 2, 1][blocks.length % 3]
     blocks.push(images.slice(i, i + step))
@@ -132,11 +123,11 @@ function Gallery({ images }: { images: ProjectImage[] }) {
   )
 }
 
-function Figure({ img, sizes, frame, bleed }: { img: ProjectImage; sizes: string; frame: string; bleed?: boolean }) {
+function Figure({ img, sizes, frame, bleed }: { img: Media; sizes: string; frame: string; bleed?: boolean }) {
   return (
     <figure>
       <div data-reveal="clip">
-        <Img media={img.media} alt={img.alt || img.media.alt} sizes={sizes} className={frame} imgClassName="h-full" />
+        <Img media={img} sizes={sizes} className={frame} imgClassName="h-full" />
       </div>
       {img.caption && <figcaption className={`mt-4 text-sm text-ink-soft ${bleed ? 'wrap' : ''}`}>{img.caption}</figcaption>}
     </figure>
