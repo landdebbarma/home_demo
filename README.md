@@ -1,32 +1,85 @@
-# React + TypeScript + Vite
+# The Cornerstone Architect — website & admin
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Portfolio website for The Cornerstone Architect (Ar. Jeanne Joseph, Bengaluru), with a dedicated page for
+**The Finishing Touch by Jeanne** and a private admin dashboard for managing projects, images and page content.
 
-Currently, two official plugins are available:
+Design direction and reference research: [`docs/DESIGN.md`](docs/DESIGN.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- **Frontend:** React 19 + Vite + Tailwind CSS 4 (the existing stack). Native View Transitions for page transitions, IntersectionObserver for scroll reveals. No animation or routing libraries.
+- **Backend:** Node 22 `node:http` + built-in `node:sqlite`. `sharp` for image processing. No framework.
+- **Data:** one folder (`DATA_DIR`, default `./data`) holds the SQLite database and all uploaded images. **Back this folder up.**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the Oxlint configuration
+Requires Node **22.18+**.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+cp .env.example .env      # set ADMIN_EMAIL, a long ADMIN_PASSWORD, SITE_URL
+npm run build
+npm start                 # http://localhost:4310 — admin at /admin
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+On first start the server:
+1. creates the single admin account from `ADMIN_EMAIL` / `ADMIN_PASSWORD` (never overwrites an existing one), and
+2. seeds the brochure imagery, default page content and three clearly-labelled **Sample Projects**.
+
+After signing in once, change the password under **Admin → Settings** and remove `ADMIN_PASSWORD` from `.env`.
+
+### Development
+
+Run the API and the Vite dev server in two terminals (Vite proxies `/api` and `/uploads` to port 4310):
+
+```bash
+npm run dev:server   # API on :4310, restarts on server changes
+npm run dev          # site on :5173 with hot reload
+```
+
+## Admin dashboard (`/admin`)
+
+| Section | What it does |
+|---|---|
+| Dashboard | Counts of published / draft / unpublished projects, unread enquiries, recent edits |
+| Projects | Search, filter by category/status, publish, unpublish, delete (with confirmation) |
+| Add New Project | Creates a draft; nothing is public until published |
+| Project editor | Title, category, location, year, descriptions, extra details, cover image, gallery (multi-upload, drag-and-drop or arrow reordering, captions, alt text, replace, delete), featured-on-homepage, display order |
+| Media Library | All images, alt text, upload, delete (images in use are protected) |
+| Website Content | Contact details, homepage, About page, The Finishing Touch text and images |
+| Enquiries | Messages from the Contact page form |
+| Settings | Change sign-in email and password (signs out other devices) |
+
+Text written in `[square brackets]` appears on the site as a visible "to be supplied" placeholder — useful for content that isn't ready yet.
+
+**Images** — JPEG, PNG, WebP, AVIF, HEIC or TIFF, up to 25 MB each. Every upload keeps the original and generates AVIF + WebP at 480/960/1600/2400 px; the site serves the right size automatically. Replacing or deleting an image removes files nothing else uses.
+
+## Security
+
+- Single admin, no registration. Passwords hashed with scrypt. Sessions are random tokens stored hashed, in `HttpOnly; SameSite=Strict` cookies (`Secure` when `NODE_ENV=production` or `COOKIE_SECURE=1`).
+- Login rate limiting: 5 failures per IP or 25 overall per 15 minutes triggers a 15-minute lockout (in memory — resets on restart).
+- All `/api/admin/*` routes require a session; cross-origin writes are rejected.
+- Uploads are validated by decoding them (not by file extension) and limited in size and count.
+- Admin-entered text is escaped when inlined into pages.
+
+## Deployment notes
+
+- Serve behind HTTPS (e.g. Caddy or nginx) and set `NODE_ENV=production`, `SITE_URL=https://your-domain`. Set `TRUST_PROXY=1` only behind a proxy that sets `X-Forwarded-For`.
+- `DATA_DIR` must be on persistent storage. Back it up regularly.
+- Run with a process manager (systemd, pm2) using `npm start`.
+- `sitemap.xml` and `robots.txt` are generated by the server.
+
+## Tests
+
+```bash
+npm run test:e2e   # API acceptance workflow on an isolated server + restart persistence (28 checks)
+npm run build && npm run test:ui   # same workflow through the real admin UI in headless Chrome
+```
+
+`test:ui` uses a local Chrome; set `CHROME_PATH` if it isn't at the default Windows location.
+
+## Content still needed from the studio
+
+- Project photography and project details (the three Sample Projects are placeholders — edit or delete them).
+- A portrait of Ar. Jeanne Joseph, her personal introduction and professional background (About page).
+- Optional: background video footage for the homepage hero.

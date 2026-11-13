@@ -1,19 +1,24 @@
 {
-  "name": "home_demo",
+  "name": "the-cornerstone-architect",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "node --env-file-if-exists=.env --watch-path=server --disable-warning=ExperimentalWarning server/index.js",
     "build": "tsc -b && vite build",
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server/index.js",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "node --disable-warning=ExperimentalWarning tests/acceptance.mjs",
+    "test:ui": "node --disable-warning=ExperimentalWarning tests/admin-ui.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
@@ -22,7 +27,11 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "puppeteer-core": "^25.17.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
+  },
+  "engines": {
+    "node": ">=22.18"
   }
 }
