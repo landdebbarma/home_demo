@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { Link, useRouter } from '../lib/router'
 import { api, ApiError, type Media, type Project } from '../lib/site'
 import { AdminDataProvider, useAdmin, type Deploy } from './store'
@@ -81,7 +82,7 @@ export default function Admin() {
   }, [])
 
   if (!me) return null
-  if (!me.authed) return <Login configured={me.configured} issues={me.issues ?? []} onDone={() => setMe({ ...me, authed: true })} />
+  if (!me.authed) return <Login configured={me.configured !== false} issues={me.issues ?? []} onDone={() => setMe({ ...me, authed: true })} />
 
   return (
     <UiCtx.Provider value={{ toast, confirm }}>
@@ -205,6 +206,7 @@ function DeployPanel() {
 
 function Login({ onDone, configured, issues }: { onDone: () => void; configured: boolean; issues: string[] }) {
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -234,9 +236,22 @@ function Login({ onDone, configured, issues }: { onDone: () => void; configured:
         <label className="mt-8 grid gap-1.5 text-sm">Email
           <input name="email" type="email" autoComplete="username" required className="ainput" />
         </label>
-        <label className="mt-4 grid gap-1.5 text-sm">Password
-          <input name="password" type="password" autoComplete="current-password" required className="ainput" />
-        </label>
+        <div className="mt-4 grid gap-1.5 text-sm">
+          <label htmlFor="admin-password">Password</label>
+          <div className="relative">
+            <input id="admin-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required className="ainput pr-11" />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              aria-controls="admin-password"
+              className="absolute inset-y-0 right-0 grid w-11 place-items-center text-ink-soft hover:text-ink"
+            >
+              {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+            </button>
+          </div>
+        </div>
         {error && <p role="alert" className="mt-4 text-sm text-cornerstone">{error}</p>}
         <button type="submit" disabled={busy} className="abtn abtn-primary mt-6 w-full">{busy ? 'Signing in…' : 'Sign in'}</button>
         <p className="mt-6 text-center text-sm text-ink-soft"><a href="/" className="underline-offset-4 hover:underline">← Back to website</a></p>
