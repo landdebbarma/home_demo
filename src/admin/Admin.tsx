@@ -54,14 +54,14 @@ const NAV = [
 ] as const
 
 export default function Admin() {
-  const [me, setMe] = useState<{ authed: boolean; configured: boolean } | null>(null)
+  const [me, setMe] = useState<{ authed: boolean; configured: boolean; issues?: string[] } | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [confirmState, setConfirmState] = useState<{ title: string; body: string; action: string; resolve: (v: boolean) => void } | null>(null)
   const dlg = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
     document.title = 'Admin — The Cornerstone Architect'
-    api<{ authed: boolean; configured: boolean }>('/api/admin/me').then(setMe).catch(() => setMe({ authed: false, configured: true }))
+    api<{ authed: boolean; configured: boolean; issues?: string[] }>('/api/admin/me').then(setMe).catch(() => setMe({ authed: false, configured: true }))
   }, [])
 
   const toast = useCallback<Ui['toast']>((text, kind = 'ok') => {
@@ -81,7 +81,7 @@ export default function Admin() {
   }, [])
 
   if (!me) return null
-  if (!me.authed) return <Login configured={me.configured} onDone={() => setMe({ ...me, authed: true })} />
+  if (!me.authed) return <Login configured={me.configured} issues={me.issues ?? []} onDone={() => setMe({ ...me, authed: true })} />
 
   return (
     <UiCtx.Provider value={{ toast, confirm }}>
@@ -203,7 +203,7 @@ function DeployPanel() {
   )
 }
 
-function Login({ onDone, configured }: { onDone: () => void; configured: boolean }) {
+function Login({ onDone, configured, issues }: { onDone: () => void; configured: boolean; issues: string[] }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -224,7 +224,13 @@ function Login({ onDone, configured }: { onDone: () => void; configured: boolean
       <form onSubmit={submit} className="w-full max-w-sm">
         <img src="/brand/logo-dark.png" alt="The Cornerstone Architect" width={803} height={600} className="mx-auto h-auto w-40" />
         <h1 className="mt-10 text-center font-serif text-3xl font-light">Studio admin</h1>
-        {!configured && <p role="alert" className="mt-4 rounded bg-[#F0DCDC] p-3 text-sm text-[#7A2A2A]">The admin account isn’t configured on the server yet. See the README for the environment variables.</p>}
+        {!configured && (
+          <div role="alert" className="mt-4 rounded bg-[#F0DCDC] p-3 text-sm text-[#7A2A2A]">
+            <p>The admin account isn’t configured on the server yet:</p>
+            <ul className="mt-2 list-disc pl-5">{issues.map((i) => <li key={i}>{i}</li>)}</ul>
+            <p className="mt-2">Fix these in Vercel → Settings → Environment Variables (Production), then redeploy.</p>
+          </div>
+        )}
         <label className="mt-8 grid gap-1.5 text-sm">Email
           <input name="email" type="email" autoComplete="username" required className="ainput" />
         </label>

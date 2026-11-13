@@ -28,7 +28,8 @@ async function body(request) {
 const clientIp = (r) => r.headers.get('x-real-ip') || (r.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'local'
 
 const routes = {
-  'GET me': (req) => ({ authed: auth.isAuthed(req), configured: auth.configured() }),
+  // When unconfigured, say which variables are wrong (names and reasons only) so setup problems are diagnosable.
+  'GET me': (req) => ({ authed: auth.isAuthed(req), configured: auth.configured(), ...(auth.configured() ? {} : { issues: auth.configIssues() }) }),
 
   'POST login': async (req) => {
     if (!auth.configured()) throw new HttpError(503, 'The admin account is not configured on the server (see README).')

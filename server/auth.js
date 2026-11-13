@@ -30,10 +30,23 @@ async function verifyPassword(password, stored) {
 
 function config() {
   const { ADMIN_EMAIL, ADMIN_PASSWORD_HASH, SESSION_SECRET } = process.env
-  if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH || !SESSION_SECRET || SESSION_SECRET.length < 32) return null
-  return { email: ADMIN_EMAIL.trim().toLowerCase(), hash: ADMIN_PASSWORD_HASH.trim(), secret: SESSION_SECRET }
+  if (configIssues().length) return null
+  return { email: ADMIN_EMAIL.trim().toLowerCase(), hash: ADMIN_PASSWORD_HASH.trim(), secret: SESSION_SECRET.trim() }
 }
 export const configured = () => Boolean(config())
+
+/** What's wrong with the admin env vars — names and reasons only, never values. */
+export function configIssues() {
+  const { ADMIN_EMAIL = '', ADMIN_PASSWORD_HASH = '', SESSION_SECRET = '' } = process.env
+  const issues = []
+  if (!ADMIN_EMAIL.trim()) issues.push('ADMIN_EMAIL is not set')
+  if (!ADMIN_PASSWORD_HASH.trim()) issues.push('ADMIN_PASSWORD_HASH is not set')
+  else if (!/^scrypt:\d+:[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+$/.test(ADMIN_PASSWORD_HASH.trim()))
+    issues.push('ADMIN_PASSWORD_HASH is not a hash from `npm run hash-password` (it should start with "scrypt:") — paste the printed value, not the password')
+  if (!SESSION_SECRET.trim()) issues.push('SESSION_SECRET is not set')
+  else if (SESSION_SECRET.trim().length < 32) issues.push(`SESSION_SECRET is too short (${SESSION_SECRET.trim().length} characters; needs at least 32)`)
+  return issues
+}
 
 export async function checkCredentials(email, password) {
   const c = config()
